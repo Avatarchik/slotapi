@@ -16,6 +16,7 @@ include_once 'models/TodoItem.php';
  
 //wrap the whole thing in a try-catch block to catch any wayward exceptions!
 try {
+
     // get request params.
     $params = $_REQUEST;
 
@@ -65,10 +66,6 @@ try {
         // return config and user id.
     }
 
-//     //cast it into an array
-//     $params = (array) $params;
-//     // $params = $_REQUEST;
-     
 //     //get the controller and format it correctly so the first
 //     //letter is always capitalized
 //     $controller = ucfirst(strtolower($params['controller']));
@@ -88,28 +85,18 @@ try {
 //     //it the parameters from the request
 //     $controller = new $controller($params);
      
-//     //check if the action exists in the controller. if not, throw an exception.
-//     if( method_exists($controller, $action) === false ) {
-//         throw new Exception('Action is not found.');
-//     }
-     
 //     //execute the action
 //     $result['data'] = $controller->$action();
 //     $result['success'] = true;
      
-// } catch( Exception $e ) {
-//     //catch any exceptions and report the problem
-//     $result = array();
-//     $result['success'] = false;
-//     $result['errormsg'] = $e->getMessage();
-// }
- 
-// //echo the result of the API call
-// echo json_encode($result);
-// exit();
+
 }
 catch(Exception $e)
 {
-
+    //catch any exceptions and report the problem
+    $result = array();
+    $result['success'] = false;
+    $result['errormsg'] = $e->getMessage();
 }
+echo json_encode($result);
 exit();
