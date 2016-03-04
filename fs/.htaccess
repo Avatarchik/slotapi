@@ -1,0 +1,15 @@
+<IfModule mod_rewrite.c>
+
+Options +FollowSymLinks
+RewriteEngine On
+
+# this got rid of the 500 error with ssl
+RewriteBase /
+
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+
+# handle 4 parameters for mobile access service
+RewriteRule ^appconfig/(.​*)$ appconfig/index_duplicate.php?api_version=$1 [QSA,NC,L]
+
+</IfModule>
