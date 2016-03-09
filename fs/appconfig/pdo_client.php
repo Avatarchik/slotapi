@@ -33,17 +33,17 @@ class pdo_client
 
 	public function getRowForUserId($user_id)
 	{
-		return $this->runQuery("SELECT user_id FROM members_device WHERE user_id = $user_id");
+		return $this->runQuery("SELECT user_id FROM members_device WHERE user_id = '$user_id'");
 	}
 
 	public function getUserIdForDeviceId($device_id)
 	{
-		return $this->runQuery("SELECT user_id FROM members_device WHERE device_id = $device_id");
+		return $this->runQuery("SELECT user_id FROM members_device WHERE device_id = '$device_id'");
 	}
 
 	public function insertNewDeviceId($device_id)
 	{
-		$result = $this->runQuery("INSERT INTO members_device (device_id, col2 , col3) values ('$device_id', 1234, 123)");
+		$result = $this->runQuery("INSERT INTO members_device (device_id) values ('$device_id')");
 		if(isset($result))
 		{
 			$user_id = $this->db->lastInsertId();
