@@ -2,7 +2,7 @@
 <?php
 
 include 'pdo_client.php';
-
+include_once 'params_helper.php';
 // Define path to data folder
 define('CONFIG_DATA_PATH', realpath(dirname(__FILE__).'/data'));
  
@@ -17,25 +17,16 @@ include_once 'models/TodoItem.php';
 //wrap the whole thing in a try-catch block to catch any wayward exceptions!
 try {
 
-    // get request params.
-    $params = $_REQUEST;
-
-    // check if the params exists.
-    if( $params == false ){
-        throw new Exception('Params is not valid');
-    }
-
     // get the provided app id
-    $app_id = $params['app_id'];
+    $app_id = requestValueFromKey('app_id');
 
     // check first if the app id exists in the list of applications.
     if( !isset($applications[$app_id]) ) {
         throw new Exception('Application does not exist!');
     }
-
     // get app key.
-    $app_key = $params['app_key'];
-
+    $app_key = requestValueFromKey('app_key');
+    
     // get hash of app_key.
     $local_app_key = hash('sha512', $applications[$app_id]);
 
@@ -45,50 +36,69 @@ try {
     	throw new Exception('App key not valid.');
     }
      
-    //check if the action exists in the controller. if not, throw an exception.
-    if(isset($params['action']) == false){
-        throw new Exception('Action is not defined');
-    }    
+    // get the action and format it correctly.
+    $action = requestValueFromKey('action');
+    $action = strtolower($action);
 
-    // get the action and format it correctly so all the
-    // letters are not capitalized, and append 'Action'
-    $action = strtolower($params['action']).'Action';
-
-    $result = array();
-
+    // create new PDO client.
+    $DB = new pdo_client();
+    
     if($action == 'fetch')
     {
-        // grab udid or user id
-        // check if user id exists
-        // if not, create a user id from udid
+        // get user_id and device_id from request.
+        $user_id = requestValueFromKey('user_id');
+        $device_id = requestValueFromKey('device_id');
 
-        // grab config
-        // return config and user id.
+        // retrieve row for user_id from DB.
+        $existing_user_id = $DB->getRowForUserId($user_id);
+
+        // if user_id is not found.
+        if(empty($existing_user_id) || $user_id == '')
+        {
+            // check if device_id is in DB.
+            $existing_device_id = $DB->getUserIdForDeviceId($device_id);
+            echo('previous user not found: '.$user_id.' checking device_id: '.$device_id);
+
+            // if device_id is not found.
+            if(empty($existing_device_id))
+            {
+
+                echo('previous device_id not found: '.$user_id.' creating new user_id from device_id: '.$device_id);
+
+                // insert the new device_id into the db and get the new associated user_id.
+                $user_id  = $DB->insertNewDeviceId($device_id);
+                echo('new user id: '.$user_id);
+            }
+            else
+            {
+                // Good device id, no good user id
+                echo('previous device_id found: '.$device_id);
+                $user_id = $existing_device_id[0]['user_id'];
+            }
+        }
+        else
+        {
+            // existing user id was found.
+
+            // check if device_id is in DB.
+            $existing_device_id = $DB->getUserIdForDeviceId($device_id);            
+            if($existing_device_id != $device_id)
+            {
+                throw new Exception("device_id did not match user_id", 1);
+            }
+        }
+
+        $result = array();
+        $result['success'] = true;
+        $result['user_id'] = $user_id;
+
     }
-
-//     //get the controller and format it correctly so the first
-//     //letter is always capitalized
-//     $controller = ucfirst(strtolower($params['controller']));
-     
-//     //get the action and format it correctly so all the
-//     //letters are not capitalized, and append 'Action'
-//     $action = strtolower($params['action']).'Action';
- 
-//     //check if the controller exists. if not, throw an exception
-//     if( file_exists("controllers/{$controller}.php") ) {
-//         include_once "controllers/{$controller}.php";
-//     } else {
-//         throw new Exception('Controller is not found.');
-//     }
-     
-//     //create a new instance of the controller, and pass
-//     //it the parameters from the request
-//     $controller = new $controller($params);
-     
-//     //execute the action
-//     $result['data'] = $controller->$action();
-//     $result['success'] = true;
-     
+    else
+    {
+        $result = array();
+        $result['success'] = false;
+        $result['errormsg'] = 'No valid action';
+    }
 
 }
 catch(Exception $e)
@@ -98,5 +108,5 @@ catch(Exception $e)
     $result['success'] = false;
     $result['errormsg'] = $e->getMessage();
 }
-echo json_encode($result);
+ echo json_encode($result);
 exit();
